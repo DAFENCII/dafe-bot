@@ -1,21 +1,21 @@
 from flask import Flask, request
+import requests
+import os
 app = Flask(__name__)
-VERIFY_TOKEN = "dafe_verify_2025"
-
-@app.route('/webhook/whatsapp', methods=['GET'])
-def verify():
-    if request.args.get('hub.verify_token') == VERIFY_TOKEN:
-        return request.args.get('hub.challenge')
-    return "wrong", 403
-
-@app.route('/webhook/whatsapp', methods=['POST'])
-def webhook():
-    print(request.json)
-    return "ok", 200
-
-@app.route('/')
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+@app.route('/', methods=['GET','POST'])
 def home():
-    return "Dafe Bot شغال"
-
+    return "Dafe Bot شغال", 200
+@app.route('/webhook', methods=['GET','POST'])
+def webhook():
+    if request.method == 'POST':
+        data = request.get_json()
+        if data and "message" in data:
+            chat_id = data["message"]["chat"]["id"]
+            text = data["message"].get("text","")
+            reply = f"البوت اشتغل! رسالتك: {text}"
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+            requests.post(url, json={"chat_id": chat_id, "text": reply})
+    return "ok", 200
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
